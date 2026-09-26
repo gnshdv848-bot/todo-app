@@ -1,11 +1,48 @@
 // Select DOM elements
 const taskInput = document.getElementById('task-input');
+const dueDateInput = document.getElementById('due-date-input');
 const addBtn = document.getElementById('add-btn');
 const taskList = document.getElementById('task-list');
 const emptyState = document.getElementById('empty-state');
 let clearAllBtn = document.getElementById('clear-all-btn');
 let taskCounter = document.getElementById('task-counter') || document.getElementById('tasks-remaining');
 let remainingCount = document.getElementById('remaining-count');
+
+// Helper function to check if a due date (YYYY-MM-DD) is overdue
+function checkIsOverdue(dueDateStr) {
+  if (!dueDateStr) return false;
+  const parts = dueDateStr.split('-').map(Number);
+  if (parts.length !== 3 || parts.some(isNaN)) return false;
+  const [year, month, day] = parts;
+
+  // Construct due date at midnight in local time
+  const dueDate = new Date(year, month - 1, day);
+  if (isNaN(dueDate.getTime())) return false;
+
+  // Normalize current date to midnight in local time for fair day-based comparison
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  // If current date is strictly past the due date, it is overdue
+  return today.getTime() > dueDate.getTime();
+}
+
+// Helper function to format YYYY-MM-DD date into localized readable string
+function formatDueDate(dueDateStr) {
+  if (!dueDateStr) return '';
+  const parts = dueDateStr.split('-').map(Number);
+  if (parts.length !== 3 || parts.some(isNaN)) return dueDateStr;
+  const [year, month, day] = parts;
+
+  const date = new Date(year, month - 1, day);
+  if (isNaN(date.getTime())) return dueDateStr;
+
+  return date.toLocaleDateString(undefined, {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  });
+}
 
 // Create clear-all button dynamically if not present in DOM
 if (!clearAllBtn) {
@@ -65,7 +102,8 @@ function saveTasks() {
     if (textSpan) {
       tasks.push({
         text: textSpan.textContent,
-        completed: li.classList.contains('completed')
+        completed: li.classList.contains('completed'),
+        dueDate: li.dataset.dueDate || ''
       });
     }
   });
@@ -73,7 +111,7 @@ function saveTasks() {
 }
 
 // Helper function to create and attach a task DOM element
-function createTaskElement(taskText, isCompleted = false) {
+function createTaskElement(taskText, isCompleted = false, dueDate = '') {
   // Create task list item (li)
   const li = document.createElement('li');
   li.className = 'task-item';
@@ -81,10 +119,27 @@ function createTaskElement(taskText, isCompleted = false) {
     li.classList.add('completed');
   }
 
+  // Record due date in dataset and check if overdue
+  if (dueDate) {
+    li.dataset.dueDate = dueDate;
+    if (checkIsOverdue(dueDate)) {
+      li.classList.add('overdue');
+    }
+  }
+
   // Create span for task description
   const span = document.createElement('span');
   span.className = 'task-text';
   span.textContent = taskText;
+  li.appendChild(span);
+
+  // Create badge for due date if specified
+  if (dueDate) {
+    const dueSpan = document.createElement('span');
+    dueSpan.className = 'task-due-date';
+    dueSpan.textContent = `Due: ${formatDueDate(dueDate)}`;
+    li.appendChild(dueSpan);
+  }
 
   // Create delete button with a small red 'X'
   const deleteBtn = document.createElement('button');
@@ -112,7 +167,6 @@ function createTaskElement(taskText, isCompleted = false) {
   });
 
   // Assemble elements
-  li.appendChild(span);
   li.appendChild(deleteBtn);
   taskList.appendChild(li);
 
@@ -122,6 +176,7 @@ function createTaskElement(taskText, isCompleted = false) {
 // Function to handle adding a new task from input
 function addTask() {
   const taskText = taskInput.value.trim();
+  const dueDate = dueDateInput ? dueDateInput.value : '';
 
   // Validate that input is not empty
   if (taskText === '') {
@@ -130,10 +185,13 @@ function addTask() {
   }
 
   // Create and append task item
-  createTaskElement(taskText, false);
+  createTaskElement(taskText, false, dueDate);
 
-  // Clear input field and restore focus
+  // Clear input fields and restore focus
   taskInput.value = '';
+  if (dueDateInput) {
+    dueDateInput.value = '';
+  }
   taskInput.focus();
 
   // Refresh empty state, task counter, and save to localStorage
@@ -159,7 +217,7 @@ function loadTasks() {
       if (Array.isArray(tasks)) {
         tasks.forEach((task) => {
           if (task && typeof task.text === 'string') {
-            createTaskElement(task.text, Boolean(task.completed));
+            createTaskElement(task.text, Boolean(task.completed), task.dueDate || '');
           }
         });
       }
@@ -185,6 +243,15 @@ taskInput.addEventListener('keydown', (event) => {
     addTask();
   }
 });
+
+// Event listener to allow pressing "Enter" key in the date input
+if (dueDateInput) {
+  dueDateInput.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      addTask();
+    }
+  });
+}
 
 // Load saved tasks from localStorage when the page loads
 loadTasks();
