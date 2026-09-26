@@ -4,6 +4,8 @@ const addBtn = document.getElementById('add-btn');
 const taskList = document.getElementById('task-list');
 const emptyState = document.getElementById('empty-state');
 let clearAllBtn = document.getElementById('clear-all-btn');
+let taskCounter = document.getElementById('task-counter') || document.getElementById('tasks-remaining');
+let remainingCount = document.getElementById('remaining-count');
 
 // Create clear-all button dynamically if not present in DOM
 if (!clearAllBtn) {
@@ -16,12 +18,41 @@ if (!clearAllBtn) {
   container.appendChild(clearAllBtn);
 }
 
+// Create task counter dynamically if not present in DOM
+if (!taskCounter) {
+  taskCounter = document.createElement('p');
+  taskCounter.id = 'task-counter';
+  taskCounter.className = 'task-counter';
+  taskCounter.innerHTML = '<span id="tasks-remaining">Tasks remaining: <span id="remaining-count">0</span></span>';
+  const header = document.querySelector('.app-header');
+  if (header) {
+    header.appendChild(taskCounter);
+  } else {
+    const container = document.querySelector('.todo-container') || document.body;
+    container.prepend(taskCounter);
+  }
+  remainingCount = document.getElementById('remaining-count');
+}
+
 // Update empty state display
 function updateEmptyState() {
   if (taskList.children.length === 0) {
     emptyState.classList.remove('hidden');
   } else {
     emptyState.classList.add('hidden');
+  }
+}
+
+// Update remaining tasks counter
+function updateTaskCounter() {
+  const remaining = taskList.querySelectorAll('.task-item:not(.completed)').length;
+  const countSpan = document.getElementById('remaining-count');
+  if (countSpan) {
+    countSpan.textContent = remaining;
+  }
+  const counterEl = document.getElementById('task-counter') || document.getElementById('tasks-remaining');
+  if (counterEl && !countSpan) {
+    counterEl.textContent = `Tasks remaining: ${remaining}`;
   }
 }
 
@@ -51,9 +82,20 @@ function addTask() {
   deleteBtn.setAttribute('aria-label', `Delete task: ${taskText}`);
 
   // Event listener to remove task when delete button is clicked
-  deleteBtn.addEventListener('click', () => {
+  deleteBtn.addEventListener('click', (event) => {
+    event.stopPropagation();
     li.remove();
     updateEmptyState();
+    updateTaskCounter();
+  });
+
+  // Event listener to toggle completed status when task is clicked
+  li.addEventListener('click', (event) => {
+    if (event.target.closest('.delete-btn')) {
+      return;
+    }
+    li.classList.toggle('completed');
+    updateTaskCounter();
   });
 
   // Assemble elements
@@ -65,14 +107,16 @@ function addTask() {
   taskInput.value = '';
   taskInput.focus();
 
-  // Refresh empty state
+  // Refresh empty state and task counter
   updateEmptyState();
+  updateTaskCounter();
 }
 
 // Function to remove all tasks at once
 function clearAllTasks() {
   taskList.innerHTML = '';
   updateEmptyState();
+  updateTaskCounter();
 }
 
 // Event listener for the "Add" button click
@@ -88,5 +132,6 @@ taskInput.addEventListener('keydown', (event) => {
   }
 });
 
-// Initial check for empty state
+// Initial check for empty state and task counter
 updateEmptyState();
+updateTaskCounter();

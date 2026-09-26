@@ -43,6 +43,14 @@ body {
   margin-top: 4px;
 }
 
+.app-header .task-counter,
+.task-counter {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #4f46e5;
+  margin-top: 8px;
+}
+
 /* Input Section */
 .input-section {
   display: flex;
@@ -107,6 +115,8 @@ body {
   border-radius: 10px;
   transition: transform 0.15s ease, background-color 0.15s ease;
   word-break: break-word;
+  cursor: pointer;
+  user-select: none;
 }
 
 .task-item:hover {
@@ -119,6 +129,14 @@ body {
   flex: 1;
   padding-right: 12px;
   line-height: 1.4;
+  transition: color 0.2s ease, text-decoration 0.2s ease;
+}
+
+/* Completed Task Styles */
+.task-item.completed .task-text,
+.task-text.completed {
+  text-decoration: line-through;
+  color: grey;
 }
 
 /* Delete Task Button (Small Red 'X') */
