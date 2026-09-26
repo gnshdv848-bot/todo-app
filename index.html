@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>To-Do List</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="todo-container">
+    <header class="app-header">
+      <h1>My Tasks</h1>
+      <p>Keep track of your daily goals</p>
+    </header>
+
+    <div class="input-section">
+      <input 
+        type="text" 
+        id="task-input" 
+        placeholder="Add a new task..." 
+        autocomplete="off"
+      />
+      <button id="add-btn" type="button">Add</button>
+    </div>
+
+    <ul id="task-list" class="task-list"></ul>
+    
+    <div id="empty-state" class="empty-state">
+      <p>No tasks yet. Add one above to get started!</p>
+    </div>
+
+    <button id="clear-all-btn" class="clear-all-btn" type="button">Clear All</button>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
