@@ -56,19 +56,30 @@ function updateTaskCounter() {
   }
 }
 
-// Function to create and add a new task item
-function addTask() {
-  const taskText = taskInput.value.trim();
+// Save tasks to localStorage
+function saveTasks() {
+  const tasks = [];
+  const items = taskList.querySelectorAll('.task-item');
+  items.forEach((li) => {
+    const textSpan = li.querySelector('.task-text');
+    if (textSpan) {
+      tasks.push({
+        text: textSpan.textContent,
+        completed: li.classList.contains('completed')
+      });
+    }
+  });
+  localStorage.setItem('tasks', JSON.stringify(tasks));
+}
 
-  // Validate that input is not empty
-  if (taskText === '') {
-    taskInput.focus();
-    return;
-  }
-
+// Helper function to create and attach a task DOM element
+function createTaskElement(taskText, isCompleted = false) {
   // Create task list item (li)
   const li = document.createElement('li');
   li.className = 'task-item';
+  if (isCompleted) {
+    li.classList.add('completed');
+  }
 
   // Create span for task description
   const span = document.createElement('span');
@@ -87,6 +98,7 @@ function addTask() {
     li.remove();
     updateEmptyState();
     updateTaskCounter();
+    saveTasks();
   });
 
   // Event listener to toggle completed status when task is clicked
@@ -96,6 +108,7 @@ function addTask() {
     }
     li.classList.toggle('completed');
     updateTaskCounter();
+    saveTasks();
   });
 
   // Assemble elements
@@ -103,18 +116,59 @@ function addTask() {
   li.appendChild(deleteBtn);
   taskList.appendChild(li);
 
+  return li;
+}
+
+// Function to handle adding a new task from input
+function addTask() {
+  const taskText = taskInput.value.trim();
+
+  // Validate that input is not empty
+  if (taskText === '') {
+    taskInput.focus();
+    return;
+  }
+
+  // Create and append task item
+  createTaskElement(taskText, false);
+
   // Clear input field and restore focus
   taskInput.value = '';
   taskInput.focus();
 
-  // Refresh empty state and task counter
+  // Refresh empty state, task counter, and save to localStorage
   updateEmptyState();
   updateTaskCounter();
+  saveTasks();
 }
 
 // Function to remove all tasks at once
 function clearAllTasks() {
   taskList.innerHTML = '';
+  updateEmptyState();
+  updateTaskCounter();
+  saveTasks();
+}
+
+// Function to retrieve saved tasks from localStorage on startup
+function loadTasks() {
+  try {
+    const saved = localStorage.getItem('tasks');
+    if (saved) {
+      const tasks = JSON.parse(saved);
+      if (Array.isArray(tasks)) {
+        tasks.forEach((task) => {
+          if (task && typeof task.text === 'string') {
+            createTaskElement(task.text, Boolean(task.completed));
+          }
+        });
+      }
+    }
+  } catch (error) {
+    console.error('Could not load tasks from localStorage:', error);
+  }
+
+  // Refresh UI state
   updateEmptyState();
   updateTaskCounter();
 }
@@ -132,6 +186,5 @@ taskInput.addEventListener('keydown', (event) => {
   }
 });
 
-// Initial check for empty state and task counter
-updateEmptyState();
-updateTaskCounter();
+// Load saved tasks from localStorage when the page loads
+loadTasks();
